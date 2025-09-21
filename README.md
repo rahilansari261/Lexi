@@ -59,21 +59,22 @@ Search endpoints return an array of case objects:
 
 ## Quick Start
 
-### Option 1: Quick Start (Recommended)
+### Quick Start
 ```bash
 # Install dependencies
 pip3 install -r requirements.txt --break-system-packages
 
 # Run the FastAPI server
-python3 simple_starlette.py
+python3 main.py
 
 # Test the API (in another terminal)
 python3 test_api.py
 ```
 
-### Option 2: Using the Deployment Script
+### Alternative: Pure FastAPI (if Python 3.13 compatibility is fixed)
 ```bash
-./deploy.sh
+# Run the pure FastAPI server
+python3 fastapi_app.py
 ```
 
 The API will be available at `http://localhost:8000`
@@ -116,9 +117,8 @@ curl -X POST "http://localhost:8000/cases/by-complainant" \
 
 ```
 jagriti-api/
-├── simple_starlette.py  # Main FastAPI application (RECOMMENDED)
-├── enhanced_flask_app.py  # Flask application (alternative)
-├── flask_app.py          # Basic Flask application
+├── main.py              # Main FastAPI application (RECOMMENDED)
+├── fastapi_app.py       # Pure FastAPI application (alternative)
 ├── scraper.py           # Web scraping logic for Jagriti portal
 ├── test_api.py          # API testing script
 ├── deploy.sh            # Deployment script

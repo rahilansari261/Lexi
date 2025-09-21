@@ -20,5 +20,5 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
-# Run the enhanced Flask app
-python3 enhanced_flask_app.py
+# Run the FastAPI app
+python3 main.py

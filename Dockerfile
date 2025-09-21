@@ -17,5 +17,5 @@ COPY . .
 # Expose port
 EXPOSE 8000
 
-# Run the application
+# Run the FastAPI application
 CMD ["python", "main.py"]
