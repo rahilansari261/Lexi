@@ -1,6 +1,6 @@
 # Jagriti Case Search API
 
-A Flask-based service that provides an interface to search for cases in Indian Consumer Courts through the Jagriti portal.
+A FastAPI-based service that provides an interface to search for cases in Indian Consumer Courts through the Jagriti portal.
 
 ## Features
 
@@ -59,27 +59,22 @@ Search endpoints return an array of case objects:
 
 ## Quick Start
 
-### Option 1: Using the Deployment Script (Recommended)
+### Option 1: Quick Start (Recommended)
+```bash
+# Install dependencies
+pip3 install -r requirements.txt --break-system-packages
+
+# Run the FastAPI server
+python3 simple_starlette.py
+
+# Test the API (in another terminal)
+python3 test_api.py
+```
+
+### Option 2: Using the Deployment Script
 ```bash
 ./deploy.sh
 ```
-
-### Option 2: Manual Setup
-
-1. **Install dependencies**
-   ```bash
-   pip3 install -r requirements.txt --break-system-packages
-   ```
-
-2. **Run the application**
-   ```bash
-   python3 enhanced_flask_app.py
-   ```
-
-3. **Test the API**
-   ```bash
-   python3 test_api.py
-   ```
 
 The API will be available at `http://localhost:8000`
 
@@ -121,11 +116,9 @@ curl -X POST "http://localhost:8000/cases/by-complainant" \
 
 ```
 jagriti-api/
-├── enhanced_flask_app.py  # Main Flask application (recommended)
+├── simple_starlette.py  # Main FastAPI application (RECOMMENDED)
+├── enhanced_flask_app.py  # Flask application (alternative)
 ├── flask_app.py          # Basic Flask application
-├── simple_main.py        # FastAPI application (compatibility issues)
-├── main.py              # Original FastAPI application
-├── models.py            # Pydantic models for request/response
 ├── scraper.py           # Web scraping logic for Jagriti portal
 ├── test_api.py          # API testing script
 ├── deploy.sh            # Deployment script
@@ -136,7 +129,7 @@ jagriti-api/
 
 ## Technical Details
 
-- **Framework**: Flask (for Python 3.13 compatibility)
+- **Framework**: FastAPI (using Starlette for Python 3.13 compatibility)
 - **Language**: Python 3.13
 - **HTTP Client**: httpx (async)
 - **HTML Parsing**: BeautifulSoup4
