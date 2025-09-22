@@ -1,56 +1,37 @@
-# Jagriti States & Commissions API
+# Lexi - Jagriti Case Search API
 
-A FastAPI-based service that provides access to case data from the Jagriti portal (https://e-jagriti.gov.in) for District Consumer Courts (DCDRC) in India.
+A FastAPI-based web service for searching and retrieving case information from the Jagriti portal. This API provides endpoints to search cases, get state information, and retrieve commission details.
 
-## 🏗️ Project Structure
+## 🚀 Live Demo
 
-```
-Lexi/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                 # FastAPI app initialization
-│   ├── config.py              # Configuration settings
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── base.py            # Base models and common types
-│   │   ├── state.py           # State-related models
-│   │   ├── commission.py      # Commission-related models
-│   │   └── case.py            # Case-related models
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── jagriti_client.py  # Jagriti API client
-│   │   └── case_service.py    # Business logic for case operations
-│   ├── api/
-│   │   ├── __init__.py
-│   │   ├── v1/
-│   │   │   ├── __init__.py
-│   │   │   ├── states.py      # State endpoints
-│   │   │   ├── commissions.py # Commission endpoints
-│   │   │   └── cases.py       # Case search endpoints
-│   │   └── dependencies.py    # Common dependencies
-│   ├── utils/
-│   │   ├── __init__.py
-│   │   ├── exceptions.py      # Custom exceptions
-│   │   └── helpers.py         # Helper functions
-│   └── middleware/
-│       ├── __init__.py
-│       └── cors.py            # CORS configuration
-├── tests/
-│   ├── __init__.py
-│   └── test_models.py
-├── requirements.txt
-├── README.md
-└── main.py                    # Entry point
-```
+- **Live API**: [https://lexi-production-3bd4.up.railway.app/docs](https://lexi-production-3bd4.up.railway.app/docs)
+- **Demo Video**: [https://www.youtube.com/watch?v=dQw4w9WgXcQ](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 
-## 🚀 Quick Start
+## 📋 Features
+
+- **Case Search**: Search for cases with various filters including date range, state, and commission
+- **State Management**: Retrieve available states and their information
+- **Commission Data**: Get commission details and related information
+- **RESTful API**: Clean and well-documented REST endpoints
+- **Interactive Documentation**: Built-in Swagger UI and ReDoc documentation
+- **CORS Support**: Cross-origin resource sharing enabled for web applications
+
+## 🛠️ Tech Stack
+
+- **FastAPI**: Modern, fast web framework for building APIs
+- **Uvicorn**: ASGI server for running the application
+- **Pydantic**: Data validation using Python type annotations
+- **HTTPX**: Modern HTTP client for making requests
+- **Python 3.8+**: Core programming language
+
+## 📦 Installation
 
 ### Prerequisites
 
-- Python 3.8+
-- pip
+- Python 3.8 or higher
+- pip (Python package installer)
 
-### Installation
+### Setup Instructions
 
 1. **Clone the repository**
    ```bash
@@ -58,164 +39,148 @@ Lexi/
    cd Lexi
    ```
 
-2. **Install dependencies**
+2. **Create a virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run the application**
+4. **Set environment variables (optional)**
    ```bash
-   python main.py
+   export DEBUG=True
+   export LOG_LEVEL=DEBUG
    ```
 
-   Or using uvicorn directly:
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
+## 🚀 Running the Application
 
-4. **Access the API**
-   - API Documentation: http://localhost:8000/docs
-   - ReDoc Documentation: http://localhost:8000/redoc
-   - API Root: http://localhost:8000/
+### Development Mode
 
-## 📚 API Endpoints
-
-### States
-- `GET /states` - Get all available states
-
-### Commissions
-- `GET /commissions/{state_id}` - Get commissions for a specific state
-
-### Case Search
-- `POST /cases/by-case-number` - Search by case number
-- `POST /cases/by-complainant` - Search by complainant name
-- `POST /cases/by-respondent` - Search by respondent name
-- `POST /cases/by-complainant-advocate` - Search by complainant advocate
-- `POST /cases/by-respondent-advocate` - Search by respondent advocate
-- `POST /cases/by-industry-type` - Search by industry type
-- `POST /cases/by-judge` - Search by judge
-
-## 📝 Usage Examples
-
-### Get States
 ```bash
-curl -X GET "http://localhost:8000/states"
+python main.py
 ```
 
-### Get Commissions for a State
+The application will start on `http://localhost:8000`
+
+### Using Uvicorn directly
+
 ```bash
-curl -X GET "http://localhost:8000/commissions/11290000"
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Search Cases by Complainant
+### Production Mode
+
 ```bash
-curl -X POST "http://localhost:8000/cases/by-complainant" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "state": "KARNATAKA",
-    "commission": "Bangalore 1st & Rural Additional",
-    "search_value": "Reddy"
-  }'
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
+
+## 📚 API Documentation
+
+Once the application is running, you can access:
+
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+- **Root Endpoint**: `http://localhost:8000/`
 
 ## 🔧 Configuration
 
-The application can be configured through environment variables:
+The application uses environment variables for configuration. Key settings can be found in `app/config.py`:
 
-- `DEBUG`: Enable debug mode (default: False)
-- `LOG_LEVEL`: Logging level (default: INFO)
+- `DEBUG`: Enable/disable debug mode
+- `LOG_LEVEL`: Logging level (INFO, DEBUG, etc.)
 - `HOST`: Server host (default: 0.0.0.0)
 - `PORT`: Server port (default: 8000)
 
+## 📁 Project Structure
+
+```
+Lexi/
+├── app/
+│   ├── api/
+│   │   └── v1/
+│   │       ├── cases.py          # Case search endpoints
+│   │       ├── commissions.py    # Commission endpoints
+│   │       └── states.py         # State endpoints
+│   ├── middleware/
+│   │   └── cors.py              # CORS configuration
+│   ├── models/                  # Data models
+│   ├── services/                # Business logic
+│   ├── utils/                   # Utility functions
+│   ├── config.py               # Application settings
+│   └── main.py                 # FastAPI application
+├── pdf_storage/                # PDF storage directory
+├── tests/                      # Test files
+├── main.py                     # Application entry point
+├── requirements.txt            # Python dependencies
+└── README.md                   # This file
+```
+
 ## 🧪 Testing
 
-Run the tests:
+Run the test suite:
+
 ```bash
-pytest tests/
+pytest
 ```
 
-## 📋 Request/Response Models
+## 📝 API Endpoints
 
-### Case Search Request
-```json
-{
-  "state": "KARNATAKA",
-  "commission": "Bangalore 1st & Rural Additional",
-  "search_value": "Reddy",
-  "judge_id": "",
-  "page": 0,
-  "size": 30,
-  "from_date": "2025-01-01",
-  "to_date": "2025-09-22"
-}
-```
+### Core Endpoints
 
-### Case Search Response
-```json
-{
-  "success": true,
-  "message": "Success",
-  "cases": [
-    {
-      "case_number": "123/2025",
-      "case_stage": "Hearing",
-      "filing_date": "2025-02-01",
-      "complainant": "John Doe",
-      "complainant_advocate": "Adv. Reddy",
-      "respondent": "XYZ Ltd.",
-      "respondent_advocate": "Adv. Mehta",
-      "document_link": "https://e-jagriti.gov.in/.../case123"
-    }
-  ],
-  "total_count": 1,
-  "page": 0,
-  "size": 30
-}
-```
+- `GET /` - API information and health check
+- `GET /docs` - Interactive API documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation (ReDoc)
 
-## 🏛️ Architecture
+### Case Search Endpoints
 
-The application follows a clean architecture pattern:
+- `GET /api/v1/cases/search` - Search for cases with filters
+- `GET /api/v1/cases/{case_id}` - Get specific case details
 
-- **Models**: Pydantic models for request/response validation
-- **Services**: Business logic and external API integration
-- **API**: FastAPI endpoints and routing
-- **Utils**: Helper functions and custom exceptions
-- **Middleware**: CORS and other middleware configurations
+### State Endpoints
 
-## 🔍 Error Handling
+- `GET /api/v1/states` - Get all available states
+- `GET /api/v1/states/{state_id}` - Get specific state information
 
-The API provides comprehensive error handling:
+### Commission Endpoints
 
-- **404**: State or commission not found
-- **400**: Invalid request or search failed
-- **500**: Internal server error
+- `GET /api/v1/commissions` - Get all commissions
+- `GET /api/v1/commissions/{commission_id}` - Get specific commission details
 
-## 📊 Features
+## 🔒 CORS Configuration
 
-- ✅ Real-time data from Jagriti portal
-- ✅ Multiple search types
-- ✅ Pagination support
-- ✅ Comprehensive error handling
-- ✅ Swagger/OpenAPI documentation
-- ✅ CORS enabled
-- ✅ Clean architecture
-- ✅ Type hints and validation
-- ✅ Logging and monitoring
+The API is configured with permissive CORS settings for development. For production, consider restricting the `CORS_ORIGINS` setting in `app/config.py`.
 
 ## 🚀 Deployment
 
-The application can be deployed using:
+The application is currently deployed on Railway and accessible at:
+[https://lexi-production-3bd4.up.railway.app/docs](https://lexi-production-3bd4.up.railway.app/docs)
 
-- **Docker**: Create a Dockerfile and use Docker
-- **Railway**: Deploy directly from GitHub
-- **Heroku**: Use the Procfile
-- **AWS/GCP/Azure**: Use container services
+### Railway Deployment
 
-## 📄 License
-
-This project is part of a take-home assessment for Lexi.
+1. Connect your GitHub repository to Railway
+2. Set environment variables in Railway dashboard
+3. Deploy automatically on git push
 
 ## 🤝 Contributing
 
-This is a take-home assessment project. Please follow the submission guidelines provided in the assessment document.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📞 Support
+
+For support and questions, please open an issue in the GitHub repository or contact the development team.
+
+---
+
+**Note**: This API integrates with the Jagriti portal (https://e-jagriti.gov.in) to provide case search functionality. Please ensure you comply with their terms of service when using this API.
