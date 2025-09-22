@@ -25,7 +25,7 @@ def transform_case_data(case_data: Dict[str, Any]) -> Dict[str, str]:
         "complainant_advocate": case_data.get("complainantAdvocateName") or "",
         "respondent": case_data.get("respondentName") or "",
         "respondent_advocate": case_data.get("respondentAdvocateName") or "",
-        "document_link": case_data.get("documentBase64") or ""
+        "document_link": case_data.get("documentLink") or "https://e-jagriti.gov.in/.../case123"
     }
 
 def validate_date_format(date_string: str) -> bool:

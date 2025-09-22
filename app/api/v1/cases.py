@@ -2,9 +2,16 @@
 Case search API endpoints
 """
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+import os
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import FileResponse, StreamingResponse
+import io
+import base64
+
 from app.models.case import CaseSearchRequest, CaseSearchResponse
-from app.api.dependencies import get_case_service
+from app.models.pdf import PDFUploadRequest, PDFUploadResponse
+from app.api.dependencies import get_case_service, get_pdf_service
 from app.utils.exceptions import (
     StateNotFoundException, 
     CommissionNotFoundException, 
@@ -140,3 +147,87 @@ async def search_by_judge(
     except Exception as e:
         logger.error(f"Unexpected error in judge search: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+# PDF Management Endpoints
+
+@router.post("/upload-document", response_model=PDFUploadResponse)
+async def upload_case_document(request: PDFUploadRequest):
+    """
+    Upload base64 PDF data for a case and return download URL
+    """
+    try:
+        pdf_service = get_pdf_service()
+        
+        # Generate filename
+        safe_case_number = request.case_number.replace("/", "_").replace(" ", "_")
+        filename = request.filename or f"case_{safe_case_number}.pdf"
+        
+        # Store PDF and get download URL
+        download_url = pdf_service.store_pdf(request.base64_data, request.case_number)
+        
+        return PDFUploadResponse(
+            success=True,
+            case_number=request.case_number,
+            document_link=download_url,
+            filename=filename,
+            message="Document uploaded successfully"
+        )
+    except Exception as e:
+        logger.error(f"Error uploading PDF for case {request.case_number}: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/download/{filename}")
+async def download_document(filename: str):
+    """
+    Download PDF document by filename
+    """
+    try:
+        pdf_service = get_pdf_service()
+        file_path = pdf_service.get_pdf_path(filename)
+        
+        if not file_path:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        return FileResponse(
+            path=str(file_path),
+            media_type="application/pdf",
+            filename=filename,
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading document {filename}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error downloading document: {str(e)}")
+
+@router.get("/download/case/{case_number}")
+async def download_case_document(case_number: str):
+    """
+    Download PDF document by case number
+    """
+    try:
+        pdf_service = get_pdf_service()
+        file_path = pdf_service.get_pdf_by_case_number(case_number)
+        
+        if not file_path:
+            raise HTTPException(status_code=404, detail="Document not found for this case")
+        
+        # Generate filename for download
+        safe_case_number = case_number.replace("/", "_").replace(" ", "_")
+        filename = f"case_{safe_case_number}.pdf"
+        
+        return FileResponse(
+            path=str(file_path),
+            media_type="application/pdf",
+            filename=filename,
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading document for case {case_number}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error downloading document: {str(e)}")

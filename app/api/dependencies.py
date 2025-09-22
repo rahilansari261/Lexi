@@ -3,10 +3,12 @@ API dependencies
 """
 from app.services.jagriti_client import JagritiClient
 from app.services.case_service import CaseService
+from app.services.pdf_service import PDFService
 
 # Global instances
 _jagriti_client = None
 _case_service = None
+_pdf_service = None
 
 def get_jagriti_client() -> JagritiClient:
     """Get Jagriti client instance"""
@@ -21,6 +23,13 @@ def get_case_service() -> CaseService:
     if _case_service is None:
         _case_service = CaseService(get_jagriti_client())
     return _case_service
+
+def get_pdf_service() -> PDFService:
+    """Get PDF service instance"""
+    global _pdf_service
+    if _pdf_service is None:
+        _pdf_service = PDFService()
+    return _pdf_service
 
 async def cleanup_dependencies():
     """Cleanup dependencies on app shutdown"""

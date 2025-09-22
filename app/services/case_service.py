@@ -6,6 +6,7 @@ from typing import List, Dict, Any
 from app.models.case import CaseSearchRequest, CaseResponse, CaseSearchResponse
 from app.models.base import SearchType
 from app.services.jagriti_client import JagritiClient
+from app.services.pdf_service import PDFService
 from app.utils.exceptions import CaseSearchException
 from app.utils.helpers import transform_case_data
 
@@ -16,6 +17,7 @@ class CaseService:
     
     def __init__(self, jagriti_client: JagritiClient):
         self.jagriti_client = jagriti_client
+        self.pdf_service = PDFService()  # Add PDF service
     
     async def search_cases(
         self, 
@@ -54,9 +56,39 @@ class CaseService:
             )
             
             if result.get("status") == 200 and result.get("data"):
-                cases = [transform_case_data(case) for case in result["data"]]
+                cases = []
+                for case_data in result["data"]:
+                    # Log the case data to see what fields are available
+                    logger.info(f"Case data fields: {list(case_data.keys())}")
+                    
+                    # Transform case data
+                    transformed_case = transform_case_data(case_data)
+                    
+                    # Check if we have base64 PDF data from Jagriti
+                    base64_pdf_data = case_data.get("documentBase64")  # From Jagriti response
+                    
+                    if base64_pdf_data:
+                        logger.info(f"Found base64 PDF data for case {transformed_case['case_number']}")
+                        # Store PDF and get download URL
+                        try:
+                            document_link = self.pdf_service.store_pdf(base64_pdf_data, transformed_case['case_number'])
+                            logger.info(f"PDF stored successfully, download URL: {document_link}")
+                        except Exception as e:
+                            logger.warning(f"Failed to store PDF for case {transformed_case['case_number']}: {e}")
+                            document_link = transformed_case.get('document_link', 'https://e-jagriti.gov.in/.../case123')
+                    else:
+                        logger.info(f"No base64 PDF data found for case {transformed_case['case_number']}")
+                        # Use original document link
+                        document_link = transformed_case.get('document_link', 'https://e-jagriti.gov.in/.../case123')
+                    
+                    # Update document link
+                    transformed_case['document_link'] = document_link
+                    logger.info(f"Final document_link for case {transformed_case['case_number']}: {document_link}")
+                    
+                    cases.append(CaseResponse(**transformed_case))
+                
                 return CaseSearchResponse(
-                    cases=[CaseResponse(**case) for case in cases],
+                    cases=cases,
                     total_count=result.get("totalCount", len(cases)),
                     page=request.page,
                     size=request.size
