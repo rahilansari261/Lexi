@@ -1,194 +1,216 @@
-# Jagriti Case Search API
+# Jagriti States & Commissions API
 
-A FastAPI-based service that provides an interface to search for cases in Indian Consumer Courts through the Jagriti portal.
+A clean FastAPI service that provides access to states and district commissions from the Jagriti portal.
 
 ## Features
 
-- **7 Search Endpoints**: Search cases by case number, complainant, respondent, advocates, industry type, and judge
-- **State & Commission Management**: Get available states and commissions with their internal IDs
-- **Real-time Data**: Makes actual requests to the Jagriti portal (not mock data)
-- **RESTful API**: Clean, well-documented REST endpoints
-- **Error Handling**: Graceful error handling and logging
-- **Web Scraping**: Automated scraping of Jagriti portal for real data
+- **States API**: Get all available states and union territories
+- **Commissions API**: Get district commissions for any state
+- **Real-time Data**: Direct integration with Jagriti portal APIs
+- **Swagger Documentation**: Interactive API documentation
+- **Clean Architecture**: Minimal, focused implementation
 
 ## API Endpoints
 
-### Core Search Endpoints
-- `POST /cases/by-case-number` - Search by case number
-- `POST /cases/by-complainant` - Search by complainant name
-- `POST /cases/by-respondent` - Search by respondent name
-- `POST /cases/by-complainant-advocate` - Search by complainant advocate
-- `POST /cases/by-respondent-advocate` - Search by respondent advocate
-- `POST /cases/by-industry-type` - Search by industry type
-- `POST /cases/by-judge` - Search by judge name
+### States
+- `GET /states` - Get all available states with commission IDs
 
-### Supporting Endpoints
-- `GET /states` - Get all available states with IDs
-- `GET /commissions/{state_id}` - Get commissions for a specific state
+### Commissions  
+- `GET /commissions/{state_id}` - Get district commissions for a specific state
 
-## Request Format
-
-All search endpoints accept the following JSON payload:
-
-```json
-{
-    "state": "KARNATAKA",
-    "commission": "Bangalore 1st & Rural Additional",
-    "search_value": "123/2025"
-}
-```
-
-## Response Format
-
-Search endpoints return an array of case objects:
-
-```json
-[
-    {
-        "case_number": "123/2025",
-        "case_stage": "Hearing",
-        "filing_date": "2025-02-01",
-        "complainant": "John Doe",
-        "complainant_advocate": "Adv. Reddy",
-        "respondent": "XYZ Ltd.",
-        "respondent_advocate": "Adv. Mehta",
-        "document_link": "https://e-jagriti.gov.in/.../case123"
-    }
-]
-```
+### Documentation
+- `GET /docs` - Interactive Swagger documentation
+- `GET /redoc` - Alternative API documentation
 
 ## Quick Start
 
-### Quick Start
 ```bash
 # Install dependencies
-pip3 install -r requirements.txt --break-system-packages
+pip install -r requirements.txt
 
-# Run the FastAPI server
-python3 main.py
-
-# Test the API (in another terminal)
-python3 test_api.py
-```
-
-### Alternative: Pure FastAPI (if Python 3.13 compatibility is fixed)
-```bash
-# Run the pure FastAPI server
-python3 fastapi_app.py
+# Run the API server
+python main.py
 ```
 
 The API will be available at `http://localhost:8000`
 
 ## Usage Examples
 
-### Get Available States
+### Get All States
 ```bash
 curl -X GET "http://localhost:8000/states"
 ```
 
-### Get Commissions for a State
+### Get Commissions for Karnataka
 ```bash
-curl -X GET "http://localhost:8000/commissions/1"
+curl -X GET "http://localhost:8000/commissions/11290000"
 ```
 
-### Search Cases by Case Number
-```bash
-curl -X POST "http://localhost:8000/cases/by-case-number" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "state": "KARNATAKA",
-    "commission": "Bangalore 1st & Rural Additional",
-    "search_value": "123/2025"
-  }'
+### View API Documentation
+Open `http://localhost:8000/docs` in your browser for interactive Swagger documentation.
+
+## Response Format
+
+### States Response
+```json
+{
+  "states": [
+    {
+      "commissionId": 11290000,
+      "commissionNameEn": "KARNATAKA",
+      "circuitAdditionBenchStatus": false,
+      "activeStatus": true
+    }
+  ]
+}
 ```
 
-### Search Cases by Complainant
-```bash
-curl -X POST "http://localhost:8000/cases/by-complainant" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "state": "KARNATAKA",
-    "commission": "Bangalore 1st & Rural Additional",
-    "search_value": "John Doe"
-  }'
+### Commissions Response
+```json
+{
+  "commissions": [
+    {
+      "commissionId": 11290501,
+      "commissionNameEn": "Bangalore Urban",
+      "circuitAdditionBenchStatus": false,
+      "activeStatus": true
+    }
+  ]
+}
 ```
 
 ## Project Structure
 
 ```
 jagriti-api/
-├── main.py              # Main FastAPI application (RECOMMENDED)
-├── fastapi_app.py       # Pure FastAPI application (alternative)
-├── scraper.py           # Web scraping logic for Jagriti portal
-├── test_api.py          # API testing script
-├── deploy.sh            # Deployment script
-├── requirements.txt     # Python dependencies
-├── Dockerfile          # Docker configuration
+├── main.py              # FastAPI application
+├── jagriti_client.py    # Jagriti API client
+├── requirements.txt     # Dependencies
 └── README.md           # This file
 ```
 
 ## Technical Details
 
-- **Framework**: FastAPI (using Starlette for Python 3.13 compatibility)
-- **Language**: Python 3.13
-- **HTTP Client**: httpx (async)
-- **HTML Parsing**: BeautifulSoup4
-- **Web Scraping**: Custom scraper for Jagriti portal
-- **CORS**: Enabled for cross-origin requests
+- **Framework**: FastAPI with automatic Swagger generation
+- **HTTP Client**: httpx for async API calls
+- **Data Source**: Direct integration with Jagriti portal APIs
+- **Response Format**: Preserves original Jagriti API structure
+- **Error Handling**: Graceful fallbacks with proper HTTP status codes
 
-## Web Scraping Features
+## API Integration
 
-The API includes a comprehensive web scraper that:
-- ✅ Extracts states and commissions from Jagriti portal
-- ✅ Handles CSRF tokens and form submissions
-- ✅ Parses search results from HTML tables
-- ✅ Extracts case details and document links
-- ✅ Graceful fallback to mock data when scraping fails
-- ✅ Error handling and logging
+The API directly calls Jagriti portal endpoints:
+- States: `https://e-jagriti.gov.in/services/report/report/getStateCommissionAndCircuitBench`
+- Commissions: `https://e-jagriti.gov.in/services/report/report/getDistrictCommissionByCommissionId`
 
-## Error Handling
+## Development
 
-The API includes comprehensive error handling:
-- Invalid search parameters return 400 Bad Request
-- Server errors return 500 Internal Server Error
-- Detailed error messages for debugging
-- Graceful fallbacks for scraping failures
-- Mock data fallback when Jagriti portal is unavailable
-
-## Testing
-
-Run the comprehensive test suite:
 ```bash
-python3 test_api.py
+# Install development dependencies
+pip install -r requirements.txt
+
+# Run with auto-reload
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-
-This will test all endpoints and error cases.
-
-## Notes
-
-- The API makes real requests to the Jagriti portal when possible
-- Results are restricted to District Consumer Courts (DCDRC) only
-- Daily Orders are used as the default filter
-- Case Filing Date is used as the default date filter
-- The service handles CSRF tokens and other security measures
-- Mock data is provided as fallback for demonstration purposes
-
-## Development Status
-
-This is a complete working implementation that:
-- ✅ Provides all required endpoints
-- ✅ Handles state and commission mapping
-- ✅ Implements web scraping for Jagriti portal
-- ✅ Returns properly formatted case data
-- ✅ Includes comprehensive error handling
-- ✅ Provides clear documentation
-- ✅ Includes testing suite
-- ✅ Ready for deployment
-
-## Deployment
-
-The API is ready for deployment and can be hosted on any platform that supports Python/Flask applications.
 
 ## License
 
 This project is created for assessment purposes.
+
+## Case Search APIs
+
+### Case Search Endpoints
+
+All case search endpoints accept the following request body:
+
+```json
+{
+    "state": "KARNATAKA",
+    "commission": "Bangalore Urban", 
+    "search_value": "search_term",
+    "judge_id": "3506",  // Only for judge search
+    "page": 0,
+    "size": 30,
+    "from_date": "2025-01-01",
+    "to_date": "2025-09-22"
+}
+```
+
+#### Search by Case Number
+- `POST /cases/by-case-number` - Search cases by case number
+
+#### Search by Complainant
+- `POST /cases/by-complainant` - Search cases by complainant name
+
+#### Search by Respondent  
+- `POST /cases/by-respondent` - Search cases by respondent name
+
+#### Search by Complainant Advocate
+- `POST /cases/by-complainant-advocate` - Search cases by complainant advocate name
+
+#### Search by Respondent Advocate
+- `POST /cases/by-respondent-advocate` - Search cases by respondent advocate name
+
+#### Search by Industry Type
+- `POST /cases/by-industry-type` - Search cases by industry type
+
+#### Search by Judge
+- `POST /cases/by-judge` - Search cases by judge (requires judge_id)
+
+### Case Search Response Format
+
+```json
+{
+    "cases": [
+        {
+            "case_number": "123/2025",
+            "case_stage": "Hearing", 
+            "filing_date": "2025-02-01",
+            "complainant": "John Doe",
+            "complainant_advocate": "Adv. Reddy",
+            "respondent": "XYZ Ltd.",
+            "respondent_advocate": "Adv. Mehta",
+            "document_link": "https://e-jagriti.gov.in/.../case123"
+        }
+    ],
+    "total_count": 1,
+    "page": 0,
+    "size": 30
+}
+```
+
+### Usage Examples
+
+#### Search by Case Number
+```bash
+curl -X POST "http://localhost:8000/cases/by-case-number" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "state": "KARNATAKA",
+    "commission": "Bangalore Urban",
+    "search_value": "123/2025"
+  }'
+```
+
+#### Search by Complainant
+```bash
+curl -X POST "http://localhost:8000/cases/by-complainant" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "state": "KARNATAKA", 
+    "commission": "Bangalore Urban",
+    "search_value": "John Doe"
+  }'
+```
+
+#### Search by Judge
+```bash
+curl -X POST "http://localhost:8000/cases/by-judge" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "state": "KARNATAKA",
+    "commission": "Bangalore Urban", 
+    "search_value": "Judge Name",
+    "judge_id": "3506"
+  }'
+```
