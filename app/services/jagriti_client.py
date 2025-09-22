@@ -1,14 +1,27 @@
+"""
+Jagriti API client for interacting with the Jagriti portal
+"""
 import httpx
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from app.config import settings
+from app.utils.exceptions import (
+    JagritiAPIError, 
+    StateNotFoundException, 
+    CommissionNotFoundException,
+    CaseSearchException
+)
+from app.utils.helpers import find_matching_item, sanitize_search_value
 
 logger = logging.getLogger(__name__)
 
 class JagritiClient:
+    """Client for interacting with Jagriti API"""
+    
     def __init__(self):
-        self.base_url = "https://e-jagriti.gov.in"
+        self.base_url = settings.JAGRITI_BASE_URL
         self.client = httpx.AsyncClient(
-            timeout=30.0,
+            timeout=settings.JAGRITI_TIMEOUT,
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
                 "Accept": "application/json,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -20,7 +33,12 @@ class JagritiClient:
         )
         
     async def get_states(self) -> List[Dict[str, Any]]:
-        """Get states from Jagriti API - return data as-is"""
+        """
+        Get states from Jagriti API
+        
+        Returns:
+            List of state data from Jagriti API
+        """
         try:
             api_url = f"{self.base_url}/services/report/report/getStateCommissionAndCircuitBench"
             response = await self.client.get(api_url)
@@ -52,12 +70,23 @@ class JagritiClient:
             
             return []
             
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error fetching states: {e}")
+            raise JagritiAPIError(f"Failed to fetch states: {str(e)}")
         except Exception as e:
             logger.error(f"Error fetching states from API: {e}")
-            return []
+            raise JagritiAPIError(f"Failed to fetch states: {str(e)}")
 
     async def get_commissions(self, state_id: str) -> List[Dict[str, Any]]:
-        """Get commissions for a state from Jagriti API - return data as-is"""
+        """
+        Get commissions for a state from Jagriti API
+        
+        Args:
+            state_id: State commission ID
+            
+        Returns:
+            List of commission data for the state
+        """
         try:
             api_url = f"{self.base_url}/services/report/report/getDistrictCommissionByCommissionId"
             params = {"commissionId": state_id}
@@ -75,9 +104,12 @@ class JagritiClient:
             
             return []
             
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error fetching commissions for state {state_id}: {e}")
+            raise JagritiAPIError(f"Failed to fetch commissions: {str(e)}")
         except Exception as e:
             logger.error(f"Error fetching commissions for state {state_id}: {e}")
-            return []
+            raise JagritiAPIError(f"Failed to fetch commissions: {str(e)}")
 
     async def get_case_details_by_search(
         self, 
@@ -102,9 +134,15 @@ class JagritiClient:
             size: Number of results per page
             from_date: Start date for search
             to_date: End date for search
+            
+        Returns:
+            Search results from Jagriti API
         """
         try:
             api_url = f"{self.base_url}/services/case/caseFilingService/v2/getCaseDetailsBySearchType"
+            
+            # Sanitize search value
+            sanitized_search_value = sanitize_search_value(search_value)
             
             # Prepare request body
             request_body = {
@@ -115,7 +153,7 @@ class JagritiClient:
                 "toDate": to_date,
                 "dateRequestType": 1,
                 "serchType": search_type,
-                "serchTypeValue": search_value,
+                "serchTypeValue": sanitized_search_value,
                 "judgeId": judge_id
             }
             
@@ -134,54 +172,83 @@ class JagritiClient:
             if data.get("status") == 200:
                 return data
             else:
+                error_msg = data.get("message", "Search failed")
                 logger.error(f"API returned error: {data}")
-                return {"status": 500, "message": "Search failed", "data": []}
+                raise CaseSearchException(f"Search failed: {error_msg}")
                 
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error in case search: {e}")
+            raise CaseSearchException(f"Search failed: {str(e)}")
+        except CaseSearchException:
+            raise
         except Exception as e:
             logger.error(f"Error in case search: {e}")
-            return {"status": 500, "message": f"Search failed: {str(e)}", "data": []}
+            raise CaseSearchException(f"Search failed: {str(e)}")
 
     async def find_state_id_by_name(self, state_name: str) -> int:
-        """Find state ID by state name"""
+        """
+        Find state ID by state name
+        
+        Args:
+            state_name: Name of the state
+            
+        Returns:
+            State commission ID
+            
+        Raises:
+            StateNotFoundException: If state is not found
+        """
         try:
             states = await self.get_states()
-            state_name_upper = state_name.upper().strip()
+            matching_state = find_matching_item(states, "commissionNameEn", state_name)
             
-            for state in states:
-                if state.get("commissionNameEn", "").upper() == state_name_upper:
-                    return state.get("commissionId")
+            if matching_state:
+                return matching_state.get("commissionId")
             
-            # If not found, try partial matching
-            for state in states:
-                if state_name_upper in state.get("commissionNameEn", "").upper():
-                    return state.get("commissionId")
+            raise StateNotFoundException(state_name)
             
-            raise ValueError(f"State '{state_name}' not found")
-            
+        except StateNotFoundException:
+            raise
         except Exception as e:
             logger.error(f"Error finding state ID for '{state_name}': {e}")
-            raise ValueError(f"State '{state_name}' not found")
+            raise StateNotFoundException(state_name)
 
     async def find_commission_id_by_name(self, state_id: int, commission_name: str) -> int:
-        """Find commission ID by commission name within a state"""
+        """
+        Find commission ID by commission name within a state
+        
+        Args:
+            state_id: State commission ID
+            commission_name: Name of the commission
+            
+        Returns:
+            Commission ID
+            
+        Raises:
+            CommissionNotFoundException: If commission is not found
+        """
         try:
             commissions = await self.get_commissions(str(state_id))
-            commission_name_upper = commission_name.upper().strip()
+            matching_commission = find_matching_item(commissions, "commissionNameEn", commission_name)
             
-            for commission in commissions:
-                if commission.get("commissionNameEn", "").upper() == commission_name_upper:
-                    return commission.get("commissionId")
+            if matching_commission:
+                return matching_commission.get("commissionId")
             
-            # If not found, try partial matching
-            for commission in commissions:
-                if commission_name_upper in commission.get("commissionNameEn", "").upper():
-                    return commission.get("commissionId")
+            # Get state name for error message
+            states = await self.get_states()
+            state_name = "Unknown"
+            for state in states:
+                if state.get("commissionId") == state_id:
+                    state_name = state.get("commissionNameEn", "Unknown")
+                    break
             
-            raise ValueError(f"Commission '{commission_name}' not found in state")
+            raise CommissionNotFoundException(commission_name, state_name)
             
+        except CommissionNotFoundException:
+            raise
         except Exception as e:
             logger.error(f"Error finding commission ID for '{commission_name}': {e}")
-            raise ValueError(f"Commission '{commission_name}' not found in state")
+            raise CommissionNotFoundException(commission_name, "Unknown")
 
     async def close(self):
         """Close the HTTP client"""
