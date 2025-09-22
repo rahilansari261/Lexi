@@ -5,7 +5,7 @@ A FastAPI-based web service for searching and retrieving case information from t
 ## 🚀 Live Demo
 
 - **Live API**: [https://lexi-production-3bd4.up.railway.app/docs](https://lexi-production-3bd4.up.railway.app/docs)
-- **Demo Video**: [https://www.youtube.com/watch?v=dQw4w9WgXcQ](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+- **Demo Video**: [https://youtu.be/iYYrZ3VeKrA](https://youtu.be/iYYrZ3VeKrA)
 
 ## 📋 Features
 
